@@ -6,6 +6,7 @@ import {
 import modelingModule from 'lib/features/modeling';
 import coreModule from 'lib/core';
 import createModule from 'diagram-js/lib/features/create';
+import bendpointsModule from 'diagram-js/lib/features/bendpoints';
 
 import {
   createCanvasEvent as canvasEvent
@@ -20,7 +21,8 @@ describe('features/modeling - layout connection', function() {
     modules: [
       coreModule,
       modelingModule,
-      createModule
+      createModule,
+      bendpointsModule
     ]
   }));
 
@@ -190,7 +192,7 @@ describe('features/modeling - layout connection', function() {
       }));
 
 
-      it('should correctly lay out connection preview',
+      it('should correctly lay out connection preview on create',
         inject(function(canvas, create, dragging, elementRegistry) {
 
           // given
@@ -216,6 +218,66 @@ describe('features/modeling - layout connection', function() {
           // then
           expect(task1.outgoing[0]).to.exist;
           expect(task1.outgoing[0].waypoints).to.deep.eql(waypointsPreview);
+        })
+      );
+
+
+      it('should correctly lay out connection preview on reconnect start',
+        inject(function(canvas, bendpointMove, dragging, elementRegistry) {
+
+          // given
+          var task1 = elementRegistry.get('Task_1'),
+              task1Gfx = canvas.getGraphics(task1),
+              sequenceFlow2 = elementRegistry.get('SequenceFlow_2');
+
+          // when
+          bendpointMove.start(canvasEvent({ x: 0, y: 0 }), sequenceFlow2, 0);
+
+          dragging.move(canvasEvent({ x: 230, y: 360 }));
+          dragging.hover({ element: task1, gfx: task1Gfx });
+          dragging.move(canvasEvent({ x: 248, y: 382 }));
+
+          var ctx = dragging.context();
+          var context = ctx.data.context;
+
+          var connectionPreview = context.connection;
+          var waypointsPreview = connectionPreview.waypoints.slice();
+
+          dragging.end();
+
+          // then
+          expect(task1.outgoing[0]).to.exist;
+          expect(task1.outgoing[0].waypoints).to.deep.eql(waypointsPreview);
+        })
+      );
+
+
+      it('should correctly lay out connection preview on reconnect end',
+        inject(function(canvas, bendpointMove, dragging, elementRegistry) {
+
+          // given
+          var task1 = elementRegistry.get('Task_1'),
+              task1Gfx = canvas.getGraphics(task1),
+              sequenceFlow2 = elementRegistry.get('SequenceFlow_2');
+
+          // when
+          bendpointMove.start(canvasEvent({ x: 0, y: 0 }), sequenceFlow2, 2);
+
+          dragging.move(canvasEvent({ x: 230, y: 360 }));
+          dragging.hover({ element: task1, gfx: task1Gfx });
+          dragging.move(canvasEvent({ x: 248, y: 382 }));
+
+          var ctx = dragging.context();
+          var context = ctx.data.context;
+
+          var connectionPreview = context.connection;
+          var waypointsPreview = connectionPreview.waypoints.slice();
+
+          dragging.end();
+
+          // then
+          expect(task1.incoming[0]).to.exist;
+          expect(task1.incoming[0].waypoints).to.deep.eql(waypointsPreview);
         })
       );
     });
